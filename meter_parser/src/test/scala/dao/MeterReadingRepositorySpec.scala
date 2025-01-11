@@ -9,6 +9,10 @@ import java.time.LocalDate
 
 class MeterReadingRepositorySpec extends CatsEffectSuite {
 
+  override def beforeEach(context: BeforeEach): Unit = {
+    DbUtil.truncateTable()
+  }
+
   override def afterAll(): Unit = {
     DbUtil.truncateTable()
   }
