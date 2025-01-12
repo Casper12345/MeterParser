@@ -18,6 +18,4 @@ object Dependencies {
 
 object TestDependencies {
   val munit = "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test
-  //  "org.typelevel" %% "cats-effect" % "3.5.2",
-//  "co.fs2" %% "fs2-io" % "3.8.0" % Test,
 }
