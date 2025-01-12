@@ -4,9 +4,25 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 import scala.util.Try
 import cats.syntax.all.*
-import domain.NEM12Record
+import domain.{NEM12Record, ParserRecord}
 
-object NEM12Parser {
+trait MeterFileParser {
+  /**
+   * Trait describes a file parser that reads lines as strings and returns either an exception or a parsed record.
+   * The only constraint on the Parser record is that it must hold a record indicator.  
+   *
+   * @param line string to parse
+   */
+  def parseLine(line: String): Either[ParserException, ParserRecord]
+
+}
+
+/**
+ * Implementation of the MeterFileParser that parses NEM12 records.
+ * See https://aemo.com.au/-/media/files/electricity/nem/retail_and_metering/metering-procedures/2017/mdff_specification_nem12_nem13_final_v102.pdf
+ * for the specification.
+ */
+object NEM12Parser extends MeterFileParser {
 
   private val DateFormat = "yyyyMMdd"
 

@@ -1,6 +1,6 @@
 package app
 
-import reader.FileReader
+import reader.{FileReader, Nem12FileReader}
 import cats.effect.{IO, IOApp}
 import fs2.Stream
 import dao.Transactor
@@ -23,7 +23,7 @@ object Main extends IOApp.Simple with Conf with LazyLogging {
         _ <- IO(logger.info(s"Processing ${files.size} files"))
         _ <- Stream.emits(files)
           .parEvalMapUnordered(parallelism)(f =>
-            FileReader.processFile(f).compile.drain.handleError(e =>
+            Nem12FileReader().processFile(f).compile.drain.handleError(e =>
               logger.error(s"Error occurred while processing file: ${f.fileName}", e)
             )
           )

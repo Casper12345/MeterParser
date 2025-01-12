@@ -1,14 +1,17 @@
 package util
 
+import cats.effect.unsafe
 import dao.Transactor
 import java.nio.file.Path
 import scala.io.Source
-import cats.effect.unsafe.implicits.global
 import doobie.postgres.implicits.*
 import doobie.implicits.*
 import cats.effect.IO
-import domain.MeterReading
+import domain.BaseMeterReading
 import doobie.hikari.HikariTransactor
+import fs2.io.file.Path as FPath
+import java.nio.file.Files as JFiles
+import scala.jdk.CollectionConverters.*
 
 object FileUtil {
 
@@ -17,25 +20,25 @@ object FileUtil {
 
   def getLines(filePath: String): Array[String] =
     Source.fromInputStream(getClass.getClassLoader.getResourceAsStream(filePath)).getLines().toArray
+
+  def createFile(fileName: String, lines: List[String], tempDir: Path): FPath = {
+    val path = tempDir.resolve(fileName)
+    JFiles.write(path, lines.asJava)
+    FPath.fromNioPath(path)
+  }  
+    
 }
 
 object DbUtil {
 
-  def truncateTable(using xa: HikariTransactor[IO]): IO[Unit] = {
-    val sql = sql"TRUNCATE TABLE  meter_readings"
+  def cleanTable(nmi: String)(using xa: HikariTransactor[IO]): IO[Unit] = {
+    val sql = sql"DELETE FROM meter_readings WHERE nmi = $nmi"
     sql.update.run.transact(xa).void
   }
 
-  def getAllMeterReadings(using xa: HikariTransactor[IO]): IO[List[MeterReading]] = {
-    val sql = sql"SELECT nmi, timestamp, consumption FROM meter_readings ORDER BY nmi, timestamp"
-    sql.query[MeterReading].to[List].transact(xa)
+  def getMeterReadings(nmi: String)(using xa: HikariTransactor[IO]): IO[List[BaseMeterReading]] = {
+    val sql = sql"SELECT nmi, timestamp, consumption FROM meter_readings WHERE nmi = $nmi ORDER BY nmi, timestamp"
+    sql.query[BaseMeterReading].to[List].transact(xa)
   }
-
-  def truncateTable(): Unit = {
-    Transactor.transactor.use { xa =>
-      given HikariTransactor[IO] = xa
-
-      DbUtil.truncateTable
-    }.unsafeRunSync()
-  }
+  
 }
