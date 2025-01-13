@@ -29,7 +29,7 @@ trait FileReader[A] {
  */
 object FileReader {
 
-  def listFiles(directory: String): IO[List[FPath]] = IO(
+  def listFiles(directory: String): IO[List[FPath]] = IO.blocking(
     JFiles.list(Paths.get(directory)).iterator().asScala.toList.map(FPath.fromNioPath)
   )
 
