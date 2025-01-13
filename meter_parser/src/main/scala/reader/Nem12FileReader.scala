@@ -5,7 +5,7 @@ import cats.effect.IO
 import fs2.io.file.{Files, Path as FPath}
 import fs2.{Stream, text}
 import parser.NEM12Parser
-import dao.{MeterReadingRepository, PostgresMeterReadingRepository}
+import dao.PostgresMeterReadingRepository
 import doobie.hikari.HikariTransactor
 import java.nio.file.{Paths, Files as JFiles}
 import scala.collection.mutable
