@@ -37,8 +37,10 @@ object PostgresMeterReadingRepository {
   private var repository: Option[PostgresMeterReadingRepository] = None
 
   def apply()(using xa: HikariTransactor[IO]): PostgresMeterReadingRepository =
-    if (repository.isEmpty) {
-      repository = Some(new PostgresMeterReadingRepository(xa))
-      repository.get
-    } else repository.get
+    synchronized {
+      if (repository.isEmpty) {
+        repository = Some(new PostgresMeterReadingRepository(xa))
+        repository.get
+      } else repository.get
+    }
 }

@@ -17,7 +17,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 /**
  * This trait describes a fs2 based stream file processor. The effect type is always a cats.effect.IO.
- * 
+ *
  * @tparam A return type of the stream. 
  */
 trait FileReader[A] {
@@ -54,17 +54,19 @@ object Nem12FileReader {
   private var fileReader: Option[Nem12FileReader] = None
 
   def apply()(using xa: HikariTransactor[IO]): Nem12FileReader =
-    if (fileReader.isEmpty) {
-      fileReader = Some(new Nem12FileReader(xa))
-      fileReader.get
-    } else fileReader.get
+    synchronized {
+      if (fileReader.isEmpty) {
+        fileReader = Some(new Nem12FileReader(xa))
+        fileReader.get
+      } else fileReader.get
+    }
 }
 
 /**
  * Nem12 implementation of FileReader.
  * This implementation preserves the order of the records in the file and shuts down the stream
  * whenever an error is encountered.
- * 
+ *
  * @param xa HikariTransactor db transactions.
  */
 private class Nem12FileReader(xa: HikariTransactor[IO]) extends FileReader[Unit] with Conf with LazyLogging {
