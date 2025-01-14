@@ -1,6 +1,6 @@
 package domain
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 trait ParserRecord {
   def indicator: Int
@@ -16,8 +16,8 @@ enum NEM12Record(indicator: Int) extends ParserRecord:
 
 abstract class MeterReading {
   val nmi: String
-  val timestamp: LocalDate
+  val timestamp: LocalDateTime
   val consumption: Double
 }
 
-case class BaseMeterReading(nmi: String, timestamp: LocalDate, consumption: Double) extends MeterReading 
+case class BaseMeterReading(nmi: String, timestamp: LocalDateTime, consumption: Double) extends MeterReading 

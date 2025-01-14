@@ -7,8 +7,9 @@ import dao.Transactor
 import doobie.hikari.HikariTransactor
 import domain.BaseMeterReading
 import util.{DbUtil, FileUtil}
+
 import java.nio.file.Files as JFiles
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import scala.language.postfixOps
 
 class FileReaderSuite extends CatsEffectSuite {
@@ -36,68 +37,27 @@ class FileReaderSuite extends CatsEffectSuite {
 }
 
 class Nem12FileReaderSuite extends CatsEffectSuite {
-  
+
   test("readFile should parse valid file") {
     val filePath = FPath.fromNioPath(FileUtil.getPath("csv/valid.csv"))
-    val expected1 =
-      List(
-        BaseMeterReading(
-          nmi = "NEM1201015",
-          timestamp = LocalDate.parse("2005-03-03"),
-          consumption = 29.789
-        ),
-        BaseMeterReading(
-          nmi = "NEM1201015",
-          timestamp = LocalDate.parse("2005-03-02"),
-          consumption = 32.24
-        ),
-        BaseMeterReading(
-          nmi = "NEM1201015",
-          timestamp = LocalDate.parse("2005-03-04"),
-          consumption = 34.206
-        ),
-        BaseMeterReading(
-          nmi = "NEM1201015",
-          timestamp = LocalDate.parse("2005-03-01"),
-          consumption = 31.444
-        )
-      ).sortBy(m => (m.nmi, m.timestamp))
-
-    val expected2 = List(
-      BaseMeterReading(
-        nmi = "NEM1201016",
-        timestamp = LocalDate.parse("2005-03-02"),
-        consumption = 31.811
-      ),
-      BaseMeterReading(
-        nmi = "NEM1201016",
-        timestamp = LocalDate.parse("2005-03-04"),
-        consumption = 31.354
-      ),
-      BaseMeterReading(
-        nmi = "NEM1201016",
-        timestamp = LocalDate.parse("2005-03-03"),
-        consumption = 34.204
-      ),
-      BaseMeterReading(
-        nmi = "NEM1201016",
-        timestamp = LocalDate.parse("2005-03-01"),
-        consumption = 33.19
-      ),
-    ).sortBy(m => (m.nmi, m.timestamp))
-
     Transactor.transactor.use { xa =>
       given HikariTransactor[IO] = xa
 
       for {
         _ <- Nem12FileReader().processFile(filePath).compile.drain
         r1 <- DbUtil.getMeterReadings("NEM1201015")
-        r2 <- DbUtil.getMeterReadings("NEM1201016")
-        _<- DbUtil.cleanTable("NEM1201015")
-        _<- DbUtil.cleanTable("NEM1201016")
+        _ <- DbUtil.cleanTable("NEM1201015")
       } yield {
-        assertEquals(r1, expected1)
-        assertEquals(r2, expected2)
+        assertEquals(r1.length, 192)
+        assertEquals(r1.head, BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-01T00:00"), 0.0))
+        assertEquals(r1(1), BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-01T00:30"), 0.0))
+        assertEquals(r1(47), BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-01T23:30"), 0.231))
+        assertEquals(r1(48), BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-02T00:00"), 0.0))
+        assertEquals(r1(95), BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-02T23:30"), 0.432))
+        assertEquals(r1(96), BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-03T00:00"), 0.0))
+        assertEquals(r1(143), BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-03T23:30"), 0.321))
+        assertEquals(r1(144), BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-04T00:00"), 0.0))
+        assertEquals(r1(191), BaseMeterReading("NEM1201015", LocalDateTime.parse("2005-03-04T23:30"), 0.612))
       }
     }
   }

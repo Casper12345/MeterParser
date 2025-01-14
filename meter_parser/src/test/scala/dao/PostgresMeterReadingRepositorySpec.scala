@@ -6,15 +6,15 @@ import doobie.hikari.HikariTransactor
 import munit.CatsEffectSuite
 import util.DbUtil
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 class PostgresMeterReadingRepositorySpec extends CatsEffectSuite {
   
   test("insert and get meter readings") {
     val xs = List(
-      BaseMeterReading("NEM1201080", LocalDate.parse("2023-01-01"), 10.0),
-      BaseMeterReading("NEM1201080", LocalDate.parse("2023-01-02"), 102.0),
-      BaseMeterReading("NEM1201080", LocalDate.parse("2023-01-03"), 112.0),
+      BaseMeterReading("NEM1201080", LocalDateTime.parse("2023-01-01T20:00"), 10.0),
+      BaseMeterReading("NEM1201080", LocalDateTime.parse("2023-01-02T20:00"), 102.0),
+      BaseMeterReading("NEM1201080", LocalDateTime.parse("2023-01-03T20:00"), 112.0),
     )
     
 

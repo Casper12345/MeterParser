@@ -7,6 +7,7 @@ import fs2.{Stream, text}
 import parser.NEM12Parser
 import dao.PostgresMeterReadingRepository
 import doobie.hikari.HikariTransactor
+
 import java.nio.file.{Paths, Files as JFiles}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -14,6 +15,8 @@ import scala.language.postfixOps
 import domain.{BaseMeterReading, NEM12Record}
 import FileReader.{*, given}
 import com.typesafe.scalalogging.LazyLogging
+
+import java.time.temporal.ChronoUnit
 
 /**
  * This trait describes a fs2 based stream file processor. The effect type is always a cats.effect.IO.
@@ -109,11 +112,17 @@ private class Nem12FileReader(xa: HikariTransactor[IO]) extends FileReader[Unit]
           InvalidOrderException("NMIDataDetails has to be parsed before IntervalData"))
         ) { nmi =>
           (intervalValues.size == (IntervalDividend / intervalLength)).orRaise {
-            val reading = BaseMeterReading(nmi, intervalDate, intervalValues.sum)
-            if (!resultSet.contains(reading)) {
-              resultCount = resultCount + 1
+            val lengthOfInterval = IntervalDividend / intervalLength
+            val intervals = (0 until lengthOfInterval).map { i =>
+              intervalDate.atStartOfDay().plus(i * intervalLength, ChronoUnit.MINUTES)
             }
-            resultSet.addOne(reading) // override as we update.
+            intervalValues.zip(intervals).map { (value, intervalDate) =>
+              val reading = BaseMeterReading(nmi, intervalDate, value)
+              if (!resultSet.contains(reading)) {
+                resultCount = resultCount + 1
+              }
+              resultSet.addOne(reading) // override as we update.
+            }
 
             if (resultCount >= chunkSize) {
               logger.debug(s"Inserting ${resultSet.size} records")
